@@ -178,11 +178,11 @@
         setContentDims  : function () {
             var that = this,
                 $children = this.$content.children(),
-                $last = $children.eq(-1);
+                last = $children.get(-1);
             this.content_h = 0;
             this.content_w = 0;
-            if ( this.options.vertical && $last.length ) {
-                this.content_h = $last[0].offsetTop + $last.outerHeight(true);
+            if ( this.options.vertical && last ) {
+                this.content_h = last.offsetTop + last.offsetHeight;
                 this.content_h += (+this.$content.css('padding-top').slice(0, -2));
 //                    (+this.$content.css('padding-bottom').slice(0, -2));
             } else {
@@ -190,7 +190,7 @@
             }
             if ( this.options.horizontal ) {
                 $children.each(function () {
-                    that.content_w += $(this).outerWidth(true);
+                    that.content_w += this.offsetWidth;
                 });
                 this.content_w += (+this.$content.css('padding-left').slice(0, -2));
 //                    (+this.$content.css('padding-right').slice(0, -2));
