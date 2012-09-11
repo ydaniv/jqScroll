@@ -178,11 +178,16 @@
         setContentDims  : function () {
             var that = this,
                 $children = this.$content.children(),
-                last = $children.get(-1);
+                i = -1,
+                last = $children.get(i);
             this.content_h = 0;
             this.content_w = 0;
             if ( this.options.vertical && last ) {
-                this.content_h = last.offsetTop + last.offsetHeight;
+                // keep iterating in case the last element is height-less and top-less, i.e. hidden input
+                while ( last && ! this.content_h ) {
+                    this.content_h = last.offsetTop + last.offsetHeight;
+                    ! this.content_h && (last = $children.get(--i));
+                }
                 this.content_h += (+this.$content.css('padding-top').slice(0, -2));
 //                    (+this.$content.css('padding-bottom').slice(0, -2));
             } else {
