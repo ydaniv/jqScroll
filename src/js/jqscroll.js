@@ -135,6 +135,7 @@
                     }
                 },
                 mouseUpHandler = function () {
+                    e.stopPropagation();
                     that.dragging = false;
                     $(document).unbind('mousemove.scroller');
                     that[_grip] && that[_grip].bind('mouseleave.scroller', mouseLeaveHandler);
@@ -144,6 +145,7 @@
                 },
                 mouseDownHandler = function (e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     drag_start_position = parseInt(e[event_metric], 10);
                     old_grip_pos = +that[_grip].css(css_attr).slice(0, -2);
                     that[_grip].unbind('mouseleave.scroller');
