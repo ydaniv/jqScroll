@@ -160,7 +160,10 @@
                 };
             this[_scroller].bind('mouseenter.scroller', mouseEnterHandler)
                 .bind('mouseleave.scroller', mouseLeaveHandler);
-            this[_grip].bind('mousedown.scroller', mouseDownHandler);
+            this[_grip].bind('mousedown.scroller', mouseDownHandler)
+                .bind('click.scroller', function (e) {
+                    return false;
+                });
             // create a public API for scrolling to a position on the screen
             this.scrollTo = function (_pos, check_visibility) {
                 var dummy = {},
