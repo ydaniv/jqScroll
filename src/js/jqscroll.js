@@ -89,7 +89,7 @@
         setGripSize     : function (is_horizontal) {
             (is_horizontal ? this.$hGrip : this.$vGrip).css(
                 is_horizontal ? 'width' : 'height',
-                parseInt((is_horizontal ? this.container_w/this.content_w : this.container_h/this.content_h)*100, 10) + '%');
+                (((is_horizontal ? this.container_w/this.content_w : this.container_h/this.content_h)*100) | 0) + '%');
         },
         scrollerEvents  : function (horizontal) {
             var that = this,
@@ -106,15 +106,15 @@
                 drag_start_position = 0,
                 old_grip_pos = 0,
                 moveGrip = function (e) {
-                    var delta = parseInt(e[event_metric] - drag_start_position, 10),
+                    var delta = (e[event_metric] - drag_start_position) | 0,
                         current_pos = old_grip_pos + delta;
                     position = current_pos;
                     if ( current_pos < 0 ) { current_pos = 0; }
                     if ( current_pos > scroll_size ) { current_pos = scroll_size; }
                     that[_grip].css(css_attr, current_pos);
                 },
-                scrollContainer = function (e) {
-                    position = parseInt(hidden_size/scroll_size*position, 10);
+                scrollContainer = function (pos) {
+                    position = typeof pos == 'number' ? pos : (hidden_size/scroll_size*position) | 0;
                     if ( position < 0 ) { position = 0; }
                     if ( position > hidden_size ) { position = hidden_size; }
                     that.position = -position;
@@ -123,7 +123,7 @@
                 dragHandler = function (e) {
                     that.dragging = true;
                     moveGrip(e);
-                    scrollContainer(e);
+                    scrollContainer();
                 },
                 mouseLeaveHandler = function () {
                     if ( ! that.dragging ) {
@@ -134,7 +134,7 @@
                         that.hoverring = false;
                     }
                 },
-                mouseUpHandler = function () {
+                mouseUpHandler = function (e) {
                     e.stopPropagation();
                     that.dragging = false;
                     $(document).unbind('mousemove.scroller');
@@ -146,7 +146,7 @@
                 mouseDownHandler = function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    drag_start_position = parseInt(e[event_metric], 10);
+                    drag_start_position = e[event_metric] | 0;
                     old_grip_pos = +that[_grip].css(css_attr).slice(0, -2);
                     that[_grip].unbind('mouseleave.scroller');
                     $(document).bind('mousemove.scroller', dragHandler)
@@ -167,16 +167,26 @@
             // create a public API for scrolling to a position on the screen
             this.scrollTo = function (_pos, check_visibility) {
                 var dummy = {},
-                    do_scroll = check_visibility ? ! this.inView(_pos) : true;
+                    do_scroll = check_visibility ? ! this.inView(_pos) : true,
+                    point;
                 if ( do_scroll ) {
                     // if this is not done during a drag then clear our starting position
                     if ( drag_start_position && ! this.dragging ) {
                         drag_start_position = 0;
                         old_grip_pos = 0;
                     }
-                    dummy[event_metric] = ~~(this.options.horizontal ? _pos.offset/this.content_w*this.container_w : _pos.offset/this.content_h*this.container_h);
-                    moveGrip(dummy);
-                    scrollContainer(dummy);
+                    if ( _pos.offset ) {
+                        point = (this.options.horizontal ? _pos.offset/this.content_w*this.container_w : _pos.offset/this.content_h*this.container_h) | 0;
+                        dummy[event_metric] = point;
+                        moveGrip(dummy);
+                        scrollContainer();
+                    }
+                    else {
+                        point = _pos;
+                        dummy[event_metric] = (this.options.horizontal ? _pos/this.content_w*this.container_w : _pos/this.content_h*this.container_h) | 0;
+                        moveGrip(dummy);
+                        scrollContainer(point);
+                    }
                 }
             };
         },
@@ -287,7 +297,7 @@
                 } else {
                     raw_pos = +raw_pos;
                     if ( raw_pos == raw_pos ) { //number and not NaN - not checking for Infinity here
-                        pos.offset = raw_pos;
+                        pos = raw_pos;
                     } else {
                         return this;
                     }
