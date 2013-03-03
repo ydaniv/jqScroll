@@ -179,7 +179,7 @@
                         point = (this.options.horizontal ? _pos.offset/this.content_w*this.container_w : _pos.offset/this.content_h*this.container_h) | 0;
                         dummy[event_metric] = point;
                         moveGrip(dummy);
-                        scrollContainer();
+                        scrollContainer(_pos.offset);
                     }
                     else {
                         point = _pos;
