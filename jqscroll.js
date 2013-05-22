@@ -1,3 +1,9 @@
+/*!
+ * jqScroll - jQuery scrollbar plugin v0.1
+ * 
+ * Copyright 2013 Yehonatan Daniv
+ * Released under the BSD license
+ */
 //TODO: mousewheel
 //TODO: respond to clicks on the scrollbar
 //TODO: BIDI
