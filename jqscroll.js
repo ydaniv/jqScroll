@@ -49,7 +49,7 @@
             return this;
         },
         build           : function () {
-            this.$content = $(this.$instance[0].firstChild);
+            this.$content = this.$instance.find(':first-child');
             this.container_h = this.options.height || this.$instance.height();
             this.container_w = this.options.width || this.$instance.width();
             this.setContentDims();
