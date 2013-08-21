@@ -209,7 +209,10 @@
                     this.content_h = last.offsetTop + last.offsetHeight;
                     ! this.content_h && (last = $children.get(--i));
                 }
-                this.content_h += (+this.$content.css('padding-top').slice(0, -2));
+               
+                if ( ! this.options.exclude_padding ) {
+                    this.content_h += (+this.$content.css('padding-top').slice(0, -2));
+                }
 //                    (+this.$content.css('padding-bottom').slice(0, -2));
             } else {
                 this.content_h = this.$content.outerHeight(true);
@@ -218,7 +221,10 @@
                 $children.each(function () {
                     that.content_w += this.offsetWidth;
                 });
-                this.content_w += (+this.$content.css('padding-left').slice(0, -2));
+
+                if ( ! this.options.exclude_padding ) {
+                    this.content_w += (+this.$content.css('padding-left').slice(0, -2));
+                }
 //                    (+this.$content.css('padding-right').slice(0, -2));
             } else {
                 this.content_w = this.$content.outerWidth(true);
