@@ -1,8 +1,7 @@
 /*!
- * jqScroll - jQuery scrollbar plugin v0.1
- * 
- * Copyright 2013 Yehonatan Daniv
- * Released under the BSD license
+ * jqScroll - jQuery scrollbar plugin
+  * @version 0.2
+ * @license BSD License (c) copyright Yehonatan Daniv
  */
 //TODO: mousewheel
 //TODO: respond to clicks on the scrollbar
@@ -13,14 +12,15 @@
         define(['jquery'], function ($) {
             return factory($, root);
         });
-    } else {
+    }
+    else {
         factory(root.jQuery, root);
     }
 }(this, function ($, _window) {
     var document = _window.document,
         defaults = {
-            vertical    : true,
-            horizontal  : false
+            vertical  : true,
+            horizontal: false
         },
         Scroller = function ($element, options) {
             this.$instance = $element;
@@ -31,55 +31,80 @@
             this.options = $.extend(true, {}, defaults, options);
         };
     Scroller.prototype = {
-        constructor     : Scroller,
-        init            : function () {
+        constructor   : Scroller,
+        init          : function (is_refresh) {
             if ( ! this.build() ) {
-                this.$instance = null;
+                if ( ! is_refresh ) {
+                    this.$instance = null;
+                }
                 return null;
             }
             this.setStyle();
             this.options.vertical && this.scrollerEvents(false);
             this.options.horizontal && this.scrollerEvents(true);
             this.$instance.data('scroller', {
-                instance    : this,
-                container   : this.$instance,
-                vScroller   : this.$vScroller,
-                hScroller   : this.$hScroller
+                instance : this,
+                container: this.$instance,
+                vScroller: this.$vScroller,
+                hScroller: this.$hScroller
             });
             return this;
         },
-        build           : function () {
+        refresh       : function (options) {
+            var result, current_offset, css_attr;
+            this.options = $.extend(true, this.options, options);
+            result = this.init(true);
+            if ( result ) {
+                // Make sure that after refresh content is not offset off of container's end
+                if ( this.options.horizontal ) {
+                    current_offset = this.container_w - this.content_w;
+                    css_attr = 'left';
+                }
+                else if ( this.options.vertical ) {
+                    current_offset = this.container_h - this.content_h;
+                    css_attr = 'top';
+                }
+                if ( current_offset > this.position ) {
+                    this.$content.css(css_attr, current_offset);
+                }
+                return result;
+            }
+            else {
+                return this.destroy();
+            }
+        },
+        build         : function () {
             this.$content = this.$instance.children().first();
             this.container_h = this.options.height || this.$instance.height();
             this.container_w = this.options.width || this.$instance.width();
             this.setContentDims();
             if ( this.options.vertical && this.content_h > this.container_h ) {
                 this.$instance.addClass('ui-scroller-container');
-                this.$vScroller = $('<div/>', {
-                    'class' : 'ui-v-scroller'
+                this.$vScroller = this.$vScroller || $('<div/>', {
+                    'class': 'ui-v-scroller'
                 }).appendTo(this.$instance);
-                this.$vGrip = $('<span/>', {
-                    'class' : 'ui-v-scroller-grip'
+                this.$vGrip = this.$vGrip || $('<span/>', {
+                    'class': 'ui-v-scroller-grip'
                 }).appendTo(this.$vScroller);
                 this.setGripSize(false);
                 return true;
             }
             if ( this.options.horizontal && this.content_w > this.container_w ) {
                 this.$instance.addClass('ui-scroller-container');
-                this.$hScroller = $('<div/>', {
-                    'class' : 'ui-h-scroller'
+                this.$hScroller = this.$hScroller || $('<div/>', {
+                    'class': 'ui-h-scroller'
                 }).appendTo(this.$instance);
-                this.$hGrip = $('<span/>', {
-                    'class' : 'ui-h-scroller-grip'
+                this.$hGrip = this.$hGrip || $('<span/>', {
+                    'class': 'ui-h-scroller-grip'
                 }).appendTo(this.$hScroller);
                 this.setGripSize(true);
                 return true;
             }
             return false;
         },
-        setStyle        : function () {
+        setStyle      : function () {
             var position = this.$instance.css('position'), _style = {};
-            if ( !~'relative|absolute|fixed'.indexOf(position) ) {
+            if ( ! ~ 'relative|absolute|fixed'.indexOf(position) ) {
                 this.$instance.css('position', 'relative');
             }
             if ( this.options.horizontal ) {
@@ -92,12 +117,13 @@
             // make sure the content is positioned absolute
             this.$content.css('position', 'absolute');
         },
-        setGripSize     : function (is_horizontal) {
+        setGripSize   : function (is_horizontal) {
             (is_horizontal ? this.$hGrip : this.$vGrip).css(
                 is_horizontal ? 'width' : 'height',
-                (((is_horizontal ? this.container_w/this.content_w : this.container_h/this.content_h)*100) | 0) + '%');
+                (((is_horizontal ? this.container_w / this.content_w : this.container_h / this.content_h) * 100) | 0) +
+                '%');
         },
-        scrollerEvents  : function (horizontal) {
+        scrollerEvents: function (horizontal) {
             var that = this,
                 event_metric = horizontal ? 'pageX' : 'pageY',
                 css_attr = horizontal ? 'left' : 'top',
@@ -106,8 +132,8 @@
                 _scroller = el_prefix + 'Scroller',
                 dimension = horizontal ? 'width' : 'height',
                 grip_size = this[_grip][dimension](),
-                scroll_size = +(this[_scroller][dimension]() - grip_size),
-                hidden_size = +(horizontal ? this.content_w - this.container_w : this.content_h - this.container_h),
+                scroll_size = + (this[_scroller][dimension]() - grip_size),
+                hidden_size = + (horizontal ? this.content_w - this.container_w : this.content_h - this.container_h),
                 position = 0,
                 drag_start_position = 0,
                 old_grip_pos = 0,
@@ -115,16 +141,24 @@
                     var delta = (e[event_metric] - drag_start_position) | 0,
                         current_pos = old_grip_pos + delta;
                     position = current_pos;
-                    if ( current_pos < 0 ) { current_pos = 0; }
-                    if ( current_pos > scroll_size ) { current_pos = scroll_size; }
+                    if ( current_pos < 0 ) {
+                        current_pos = 0;
+                    }
+                    if ( current_pos > scroll_size ) {
+                        current_pos = scroll_size;
+                    }
                     that[_grip].css(css_attr, current_pos);
                 },
                 scrollContainer = function (pos) {
-                    position = typeof pos == 'number' ? pos : (hidden_size/scroll_size*position) | 0;
-                    if ( position < 0 ) { position = 0; }
-                    if ( position > hidden_size ) { position = hidden_size; }
-                    that.position = -position;
-                    that.$content.css(css_attr, -position);
+                    position = typeof pos == 'number' ? pos : (hidden_size / scroll_size * position) | 0;
+                    if ( position < 0 ) {
+                        position = 0;
+                    }
+                    if ( position > hidden_size ) {
+                        position = hidden_size;
+                    }
+                    that.position = - position;
+                    that.$content.css(css_attr, - position);
                 },
                 dragHandler = function (e) {
                     that.dragging = true;
@@ -134,17 +168,18 @@
                 mouseLeaveHandler = function () {
                     if ( ! that.dragging ) {
                         that[_scroller].stop(true, true).animate({
-                            opacity : 0.3
+                            opacity: 0.3
                         }, 200);
-                    } else {
+                    }
+                    else {
                         that.hoverring = false;
                     }
                 },
                 mouseUpHandler = function (e) {
                     e.stopPropagation();
                     that.dragging = false;
-                    $(document).unbind('mousemove.scroller');
-                    that[_grip] && that[_grip].bind('mouseleave.scroller', mouseLeaveHandler);
+                    $(document).off('mousemove.scroller');
+                    that[_grip] && that[_grip].on('mouseleave.scroller', mouseLeaveHandler);
                     if ( ! that.hoverring ) {
                         mouseLeaveHandler();
                     }
@@ -153,21 +188,23 @@
                     e.preventDefault();
                     e.stopPropagation();
                     drag_start_position = e[event_metric] | 0;
-                    old_grip_pos = +that[_grip].css(css_attr).slice(0, -2);
-                    that[_grip].unbind('mouseleave.scroller');
-                    $(document).bind('mousemove.scroller', dragHandler)
-                        .bind('mouseup.scroller', mouseUpHandler);
+                    old_grip_pos = + that[_grip].css(css_attr).slice(0, - 2);
+                    that[_grip].off('mouseleave.scroller');
+                    $(document).on('mousemove.scroller', dragHandler)
+                        .on('mouseup.scroller', mouseUpHandler);
                 },
                 mouseEnterHandler = function () {
                     that.hoverring = true;
                     that[_scroller].animate({
-                        opacity : 1
+                        opacity: 1
                     }, 200);
                 };
-            this[_scroller].bind('mouseenter.scroller', mouseEnterHandler)
-                .bind('mouseleave.scroller', mouseLeaveHandler);
-            this[_grip].bind('mousedown.scroller', mouseDownHandler)
-                .bind('click.scroller', function (e) {
+            this[_scroller].off('mouseenter.scroller mouseleave.scroller')
+                .on('mouseenter.scroller', mouseEnterHandler)
+                .on('mouseleave.scroller', mouseLeaveHandler);
+            this[_grip].off('mouseleave.scroller click.scroller')
+                .on('mousedown.scroller', mouseDownHandler)
+                .on('click.scroller', function (e) {
                     return false;
                 });
             // create a public API for scrolling to a position on the screen
@@ -182,24 +219,28 @@
                         old_grip_pos = 0;
                     }
                     if ( _pos.offset ) {
-                        point = (this.options.horizontal ? _pos.offset/this.content_w*this.container_w : _pos.offset/this.content_h*this.container_h) | 0;
+                        point = (this.options.horizontal ?
+                                 _pos.offset / this.content_w * this.container_w :
+                                 _pos.offset / this.content_h * this.container_h) | 0;
                         dummy[event_metric] = point;
                         moveGrip(dummy);
                         scrollContainer(_pos.offset);
                     }
                     else {
                         point = _pos;
-                        dummy[event_metric] = (this.options.horizontal ? _pos/this.content_w*this.container_w : _pos/this.content_h*this.container_h) | 0;
+                        dummy[event_metric] = (this.options.horizontal ?
+                                               _pos / this.content_w * this.container_w :
+                                               _pos / this.content_h * this.container_h) | 0;
                         moveGrip(dummy);
                         scrollContainer(point);
                     }
                 }
             };
         },
-        setContentDims  : function () {
+        setContentDims: function () {
             var that = this,
                 $children = this.$content.children(),
-                i = -1,
+                i = - 1,
                 last = $children.get(i);
             this.content_h = 0;
             this.content_w = 0;
@@ -207,14 +248,15 @@
                 // keep iterating in case the last element is height-less and top-less, i.e. hidden input
                 while ( last && ! this.content_h ) {
                     this.content_h = last.offsetTop + last.offsetHeight;
-                    ! this.content_h && (last = $children.get(--i));
+                    ! this.content_h && (last = $children.get(-- i));
                 }
-               
+
                 if ( ! this.options.exclude_padding ) {
-                    this.content_h += (+this.$content.css('padding-top').slice(0, -2));
+                    this.content_h += (+ this.$content.css('padding-top').slice(0, - 2));
                 }
 //                    (+this.$content.css('padding-bottom').slice(0, -2));
-            } else {
+            }
+            else {
                 this.content_h = this.$content.outerHeight(true);
             }
             if ( this.options.horizontal ) {
@@ -223,19 +265,21 @@
                 });
 
                 if ( ! this.options.exclude_padding ) {
-                    this.content_w += (+this.$content.css('padding-left').slice(0, -2));
+                    this.content_w += (+ this.$content.css('padding-left').slice(0, - 2));
                 }
 //                    (+this.$content.css('padding-right').slice(0, -2));
-            } else {
+            }
+            else {
                 this.content_w = this.$content.outerWidth(true);
             }
         },
-        inView          : function (_pos) {
+        inView        : function (_pos) {
             var current_pos = this.position || 0;
             return _pos.offset > - current_pos &&
-                _pos.offset + _pos.size < (this.options.horizontal ? this.container_w : this.container_h) - current_pos;
+                   _pos.offset + _pos.size <
+                   (this.options.horizontal ? this.container_w : this.container_h) - current_pos;
         },
-        destroy         : function () {
+        destroy       : function () {
             var reset_pos = {};
             this.$instance.removeData('scroller');
             if ( this.options.horizontal ) {
@@ -247,7 +291,7 @@
             this.$content.css(reset_pos);
             for ( var k in this ) {
                 if ( k.indexOf('$') === 0 ) {
-                    if ( !~'$instance|$content'.indexOf(k) ) {
+                    if ( ! ~ '$instance|$content'.indexOf(k) ) {
                         this[k].remove();
                     }
                     this[k] = null;
@@ -264,9 +308,9 @@
                 if ( ! scroller.init() ) {
                     scroller = null;
                 }
-            } else {
-                methods.destroy.call(this);
-                return methods.init.call(this, options);
+            }
+            else {
+                data.instance.refresh(options);
             }
             return this;
         },
@@ -275,7 +319,7 @@
             if ( data && data.instance ) {
                 data.instance.destroy();
             }
-            $(document).unbind('.scroller');
+            $(document).off('.scroller');
             return this;
         },
         option  : function (name, value) {
@@ -302,15 +346,18 @@
                     if ( instance.options.horizontal ) {
                         pos.offset = raw_pos[0].offsetLeft;
                         pos.size = raw_pos.outerWidth(true);
-                    } else {
+                    }
+                    else {
                         pos.offset = raw_pos[0].offsetTop;
                         pos.size = raw_pos.outerHeight(true);
                     }
-                } else {
-                    raw_pos = +raw_pos;
+                }
+                else {
+                    raw_pos = + raw_pos;
                     if ( raw_pos == raw_pos ) { //number and not NaN - not checking for Infinity here
                         pos = raw_pos;
-                    } else {
+                    }
+                    else {
                         return this;
                     }
                 }
@@ -321,11 +368,13 @@
     };
     $.fn.scroller = function (method) {
         if ( methods[method] ) {
-            return methods[ method ].apply( this, Array.prototype.slice.call( arguments, 1 ));
-        } else if ( typeof method === 'object' || ! method ) {
-            return methods.init.apply( this, arguments );
-        } else {
-            $.error( 'Method ' +  method + ' does not exist on jQuery.scroller' );
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        }
+        else if ( typeof method === 'object' || ! method ) {
+            return methods.init.apply(this, arguments);
+        }
+        else {
+            $.error('Method ' + method + ' does not exist on jQuery.scroller');
         }
     };
 }));
